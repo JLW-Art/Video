@@ -7,61 +7,64 @@
     <title>Video Synth V1.01</title>
     <style>
       /* Global Styles */
-      html, body {
-        margin: 0;
-        padding: 0;
-        width: 100vw;
-        height: 100vh;
-        overflow: auto;
-        background-color: #2d2d2d;
-        font-family: Arial, sans-serif;
-        font-size: 14px;
-        box-sizing: border-box;
-      }
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;          /* Use 100% instead of 100vw */
+  max-width: 100%;
+  height: 100%;
+  overflow-x: hidden;   /* Prevent accidental horizontal scrolling */
+  background-color: #2d2d2d;
+  font-family: Arial, sans-serif;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
       /* Outer container holds the canvas on the left and UI panel on the right */
-      #container {
-        display: flex;
-        flex-direction: row;
-        gap: 10px;
-        padding: 10px;
-        width: 100%;
-        height: 100%;
-        box-sizing: border-box;
-      }
-      /* Canvas container: centres the canvas and always provides 10px padding */
-      #canvasContainer {
-        flex: 1;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 10px;
-      }
-      /* Simulation canvas – its display dimensions are computed by JavaScript to enforce a fixed aspect ratio.
-         Clicking the canvas toggles full-screen mode. */
-      #simulationCanvas {
-        background-color: black;
-        border-radius: 10px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-        cursor: pointer;
-      }
-      /* UI Panel remains fixed on the right at 400px width and sits higher up */
-      #controls {
-        width: 400px;
-        background-color: #333;
-        padding: 10px 15px 15px 15px;
-        border-radius: 10px;
-        box-sizing: border-box;
-        overflow-y: auto;
-        color: #f0f0f0;
-      }
-      @media (max-width: 600px) {
-        #container {
-          flex-direction: column;
-        }
-        #controls {
-          width: 100%;
-        }
-      }
+  /* Outer container holds the canvas on the left and UI panel on the right */
+  #container {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+    padding: 10px;
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+  }
+
+  /* Canvas container: centers the canvas and always provides 10px padding */
+  #canvasContainer {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+    /* Ensure the container never exceeds the available width */
+    max-width: 100%;
+  }
+
+  /* UI Panel remains fixed on the right at 400px width on desktop */
+  #controls {
+    width: 400px;
+    background-color: #333;
+    padding: 10px 15px 15px 15px;
+    border-radius: 10px;
+    box-sizing: border-box;
+    overflow-y: auto;
+    color: #f0f0f0;
+  }
+
+  /* Mobile adjustments */
+  @media (max-width: 600px) {
+    #container {
+      flex-direction: column;
+    }
+    #controls {
+      width: 100%;   /* Use full available width on mobile */
+      padding: 10px; /* Optionally reduce padding if needed */
+    }
+  }
+
       /* Header styling: "Video Synth" with a small "by JLW" link at top right */
       #controls h2 {
         font-size: 18px;
@@ -371,17 +374,17 @@ function updateCanvasSize() {
   let availableWidth, availableHeight;
 
   if (isMobile) {
-    // On mobile, use nearly the full screen
-    availableWidth = window.innerWidth - 20; // small padding
-    availableHeight = window.innerHeight * 0.7; // use 70% of the height for the canvas
+    // On mobile, use nearly the full screen width with a small padding.
+    availableWidth = window.innerWidth - 20;
+    // Use a portion of the screen height; adjust 0.7 as needed.
+    availableHeight = window.innerHeight * 0.7;
   } else {
-    // On desktop, reserve space for the control panel
     const horizontalPadding = 20, verticalPadding = 20;
     availableWidth = window.innerWidth - CONTROL_PANEL_WIDTH - horizontalPadding;
     availableHeight = window.innerHeight - verticalPadding;
   }
 
-  // Calculate canvas size while keeping the proper aspect ratio
+  // Calculate canvas size while maintaining the aspect ratio.
   const ratio = ASPECT_RATIO_LANDSCAPE ? 16 / 9 : 9 / 16;
   let canvasWidth, canvasHeight;
   if (availableWidth / ratio <= availableHeight) {
@@ -397,6 +400,7 @@ function updateCanvasSize() {
   ANIMATION_DISPLAY_WIDTH = canvasWidth;
   ANIMATION_DISPLAY_HEIGHT = canvasHeight;
 }
+
 
 
 
