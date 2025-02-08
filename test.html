@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <!-- Ensure proper scaling on mobile devices -->
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Video Synth V1.01</title>
+    <title>Video Synth V1.02</title>
     <style>
       /* Global Styles */
       html, body {
@@ -230,7 +230,7 @@
       <!-- Right side: UI Panel -->
       <div id="controls">
         <h2>
-          Video Synth v1
+          Video Synth <span style="font-size: 0.7em; color: #888;">v1.02</span>
           <span class="by-jlw"><a href="https://jlw.kleio.com" target="_blank">by JLW</a></span>
         </h2>
         <div id="toggles"></div>
@@ -252,6 +252,9 @@
         zoom_level: 1.0,
         edge_detection: false,
         invert_colors: false,
+        // New parameter for custom initial pattern:
+        initial_pattern_toggle: false,
+        // Existing pattern toggles:
         checkerboard_pattern: false,
         spiral_pattern: false,
         cross_pattern: false,
@@ -318,87 +321,64 @@
         return newImage;
       }
 
-function updateRenderDimensions() {
-  // Choose base dimensions depending on orientation
-  let baseWidth, baseHeight;
-  if (ASPECT_RATIO_LANDSCAPE) {
-    baseWidth = BASE_ANIMATION_RENDER_WIDTH_LANDSCAPE;  // e.g., 320
-    baseHeight = BASE_ANIMATION_RENDER_HEIGHT_LANDSCAPE; // e.g., 180
-  } else {
-    baseWidth = BASE_ANIMATION_RENDER_WIDTH_PORTRAIT;   // e.g., 180
-    baseHeight = BASE_ANIMATION_RENDER_HEIGHT_PORTRAIT;   // e.g., 320
-  }
-
-  // Use your default resolution scale (set in controlParams)
-  let currentScale = controlParams.resolution_scale; // usually 1.0
-
-  // Only adjust if in full-screen and the display is extremely small
-  if (document.fullscreenElement) {
-    if (ASPECT_RATIO_LANDSCAPE) {
-      // In landscape, if the full-screen canvas height is below a threshold,
-      // then bump up the scale.
-      if (ANIMATION_DISPLAY_HEIGHT < 180) {  // adjust threshold as needed
-        currentScale = 1.5;
+      function updateRenderDimensions() {
+        let baseWidth, baseHeight;
+        if (ASPECT_RATIO_LANDSCAPE) {
+          baseWidth = BASE_ANIMATION_RENDER_WIDTH_LANDSCAPE;
+          baseHeight = BASE_ANIMATION_RENDER_HEIGHT_LANDSCAPE;
+        } else {
+          baseWidth = BASE_ANIMATION_RENDER_WIDTH_PORTRAIT;
+          baseHeight = BASE_ANIMATION_RENDER_HEIGHT_PORTRAIT;
+        }
+        let currentScale = controlParams.resolution_scale;
+        if (document.fullscreenElement) {
+          if (ASPECT_RATIO_LANDSCAPE) {
+            if (ANIMATION_DISPLAY_HEIGHT < 180) {
+              currentScale = 1.5;
+            }
+          } else {
+            if (ANIMATION_DISPLAY_WIDTH < 180) {
+              currentScale = 1.5;
+            }
+          }
+        }
+        let renderWidth = Math.floor(baseWidth * currentScale);
+        let renderHeight = Math.floor(baseHeight * currentScale);
+        const maxWidth = 640, maxHeight = 360;
+        if (renderWidth > maxWidth || renderHeight > maxHeight) {
+          currentScale = Math.min(maxWidth / baseWidth, maxHeight / baseHeight);
+          renderWidth = Math.floor(baseWidth * currentScale);
+          renderHeight = Math.floor(baseHeight * currentScale);
+        }
+        ANIMATION_RENDER_WIDTH = renderWidth;
+        ANIMATION_RENDER_HEIGHT = renderHeight;
       }
-    } else {
-      // In portrait, check the canvas width
-      if (ANIMATION_DISPLAY_WIDTH < 180) {  // adjust threshold as needed
-        currentScale = 1.5;
+
+      function updateCanvasSize() {
+        const isMobile = window.innerWidth < 600;
+        let availableWidth, availableHeight;
+        if (isMobile) {
+          availableWidth = window.innerWidth - 20;
+          availableHeight = window.innerHeight * 0.7;
+        } else {
+          const horizontalPadding = 20, verticalPadding = 20;
+          availableWidth = window.innerWidth - CONTROL_PANEL_WIDTH - horizontalPadding;
+          availableHeight = window.innerHeight - verticalPadding;
+        }
+        const ratio = ASPECT_RATIO_LANDSCAPE ? 16 / 9 : 9 / 16;
+        let canvasWidth, canvasHeight;
+        if (availableWidth / ratio <= availableHeight) {
+          canvasWidth = availableWidth;
+          canvasHeight = availableWidth / ratio;
+        } else {
+          canvasHeight = availableHeight;
+          canvasWidth = availableHeight * ratio;
+        }
+        simulationCanvas.width = canvasWidth;
+        simulationCanvas.height = canvasHeight;
+        ANIMATION_DISPLAY_WIDTH = canvasWidth;
+        ANIMATION_DISPLAY_HEIGHT = canvasHeight;
       }
-    }
-  }
-
-  // Compute the render dimensions based on the (possibly adjusted) scale
-  let renderWidth = Math.floor(baseWidth * currentScale);
-  let renderHeight = Math.floor(baseHeight * currentScale);
-
-  // (Optional) Cap the render dimensions to avoid performance issues.
-  const maxWidth = 640, maxHeight = 360;
-  if (renderWidth > maxWidth || renderHeight > maxHeight) {
-    currentScale = Math.min(maxWidth / baseWidth, maxHeight / baseHeight);
-    renderWidth = Math.floor(baseWidth * currentScale);
-    renderHeight = Math.floor(baseHeight * currentScale);
-  }
-
-  // Update the global variables used by your simulation
-  ANIMATION_RENDER_WIDTH = renderWidth;
-  ANIMATION_RENDER_HEIGHT = renderHeight;
-}
-
-
-function updateCanvasSize() {
-  const isMobile = window.innerWidth < 600;
-  let availableWidth, availableHeight;
-
-  if (isMobile) {
-    // On mobile, use nearly the full screen
-    availableWidth = window.innerWidth - 20; // small padding
-    availableHeight = window.innerHeight * 0.7; // use 70% of the height for the canvas
-  } else {
-    // On desktop, reserve space for the control panel
-    const horizontalPadding = 20, verticalPadding = 20;
-    availableWidth = window.innerWidth - CONTROL_PANEL_WIDTH - horizontalPadding;
-    availableHeight = window.innerHeight - verticalPadding;
-  }
-
-  // Calculate canvas size while keeping the proper aspect ratio
-  const ratio = ASPECT_RATIO_LANDSCAPE ? 16 / 9 : 9 / 16;
-  let canvasWidth, canvasHeight;
-  if (availableWidth / ratio <= availableHeight) {
-    canvasWidth = availableWidth;
-    canvasHeight = availableWidth / ratio;
-  } else {
-    canvasHeight = availableHeight;
-    canvasWidth = availableHeight * ratio;
-  }
-
-  simulationCanvas.width = canvasWidth;
-  simulationCanvas.height = canvasHeight;
-  ANIMATION_DISPLAY_WIDTH = canvasWidth;
-  ANIMATION_DISPLAY_HEIGHT = canvasHeight;
-}
-
-
 
       function initializeDisplacementBase() {
         displacementXBase = [];
@@ -415,9 +395,29 @@ function updateCanvasSize() {
         }
       }
 
-      // Create the initial image. Binary patterns output 0.1 (off) and 0.9 (on)
+      // Modified createInitialImage() to check for our new toggle.
       function createInitialImage() {
         let image = [];
+        if (controlParams.initial_pattern_toggle) {
+          // Custom initial pattern: a radial gradient pattern.
+          let cx = ANIMATION_RENDER_WIDTH / 2;
+          let cy = ANIMATION_RENDER_HEIGHT / 2;
+          let maxDist = Math.sqrt(cx * cx + cy * cy);
+          for (let i = 0; i < ANIMATION_RENDER_HEIGHT; i++) {
+            let row = [];
+            for (let j = 0; j < ANIMATION_RENDER_WIDTH; j++) {
+              let dx = j - cx;
+              let dy = i - cy;
+              let dist = Math.sqrt(dx * dx + dy * dy);
+              let intensity = 1 - (dist / maxDist);
+              intensity = Math.max(0, Math.min(1, intensity));
+              row.push([intensity, intensity, intensity]);
+            }
+            image.push(row);
+          }
+          return image;
+        }
+        // Otherwise, use the existing pattern logic:
         for (let i = 0; i < ANIMATION_RENDER_HEIGHT; i++) {
           let row = [];
           for (let j = 0; j < ANIMATION_RENDER_WIDTH; j++) {
@@ -757,11 +757,10 @@ function updateCanvasSize() {
           numberInput.step = info.step;
           numberInput.style.fontSize = "14px";
           numberInput.style.width = "50px";
-span.replaceWith(numberInput);
-setTimeout(() => {
-  numberInput.focus();
-}, 100);
-
+          span.replaceWith(numberInput);
+          setTimeout(() => {
+            numberInput.focus();
+          }, 100);
           numberInput.addEventListener("keydown", function(e) {
             if (e.key === "Enter") {
               numberInput.blur();
@@ -787,14 +786,17 @@ setTimeout(() => {
         });
       }
 
-      /* Setup UI: Single grouped toggles (two columns), natural labels, and mutual exclusion for pattern toggles */
+      /* Setup UI: grouped toggles, sliders, curve editors, and buttons.
+         Note: We add our new "Sunburst Pattern" toggle and include it in a mutual-exclusion group with the other pattern toggles. */
       function setupUI() {
         const togglesDiv = document.getElementById("toggles");
         togglesDiv.innerHTML = "";
+        // Include the new toggle along with the other toggles.
         const allToggles = [
           { name: "edge_detection", label: "Enable Edge Detection" },
           { name: "invert_colors", label: "Invert Colours" },
           { name: "effect", label: "Effect" },
+          { name: "initial_pattern_toggle", label: "Sunburst Pattern" },
           { name: "checkerboard_pattern", label: "Checkerboard Pattern" },
           { name: "spiral_pattern", label: "Spiral Pattern" },
           { name: "cross_pattern", label: "Cross Pattern" },
@@ -802,7 +804,8 @@ setTimeout(() => {
           { name: "diagonal_lines_pattern", label: "Diagonal Lines" },
           { name: "triangle_pattern", label: "Triangle Pattern" }
         ];
-        const patternGroup = ["checkerboard_pattern", "spiral_pattern", "cross_pattern", "concentric_circles_pattern", "diagonal_lines_pattern", "triangle_pattern"];
+        // Update the mutual-exclusion group to include our new toggle.
+        const patternGroup = ["initial_pattern_toggle", "checkerboard_pattern", "spiral_pattern", "cross_pattern", "concentric_circles_pattern", "diagonal_lines_pattern", "triangle_pattern"];
         allToggles.forEach(info => {
           const container = document.createElement("div");
           container.className = "toggle-container";
@@ -811,6 +814,7 @@ setTimeout(() => {
           input.id = info.name;
           input.checked = controlParams[info.name];
           input.onchange = function() {
+            // For toggles in the pattern group, enforce mutual exclusion.
             if (patternGroup.includes(info.name) && this.checked) {
               allToggles.forEach(other => {
                 if (patternGroup.includes(other.name) && other.name !== info.name) {
@@ -917,11 +921,11 @@ setTimeout(() => {
         const flipAspectBtn = document.createElement("button");
         flipAspectBtn.className = "button";
         flipAspectBtn.innerText = "Toggle Orientation";
-flipAspectBtn.onclick = function() {
-  ASPECT_RATIO_LANDSCAPE = !ASPECT_RATIO_LANDSCAPE;
-  initializeSimulation();
-  updateLayout();  // This will call updateCanvasSize() and update the UI
-};
+        flipAspectBtn.onclick = function() {
+          ASPECT_RATIO_LANDSCAPE = !ASPECT_RATIO_LANDSCAPE;
+          initializeSimulation();
+          updateLayout();
+        };
         buttonsDiv.appendChild(restartBtn);
         buttonsDiv.appendChild(flipAspectBtn);
       }
@@ -1039,115 +1043,36 @@ flipAspectBtn.onclick = function() {
         }
       }
 
-      function setupCurveEditors() {
-        const editorsDiv = document.getElementById("curveEditors");
-        editorsDiv.innerHTML = "";
-        const channels = [
-          { key: "r", label: "Red Curve" },
-          { key: "g", label: "Green Curve" },
-          { key: "b", label: "Blue Curve" },
-          { key: "w", label: "White Curve" }
-        ];
-        channels.forEach(chObj => {
-          const container = document.createElement("div");
-          container.className = "curve-editor-container";
-          container.style.position = "relative";
-          const label = document.createElement("div");
-          label.innerText = chObj.label + ":";
-          label.style.fontSize = "14px";
-          label.style.marginBottom = "5px";
-          container.appendChild(label);
-          const editor = new CurveEditor(chObj.key, 180, 120);
-          container.appendChild(editor.canvas);
-          container.appendChild(editor.resetButton);
-          editorsDiv.appendChild(container);
-          editor.draw();
-        });
-      }
-
       function updateLayout() {
         updateCanvasSize();
         setupUI();
       }
 
-window.onload = function() {
-  simulationCanvas = document.getElementById("simulationCanvas");
-  simCtx = simulationCanvas.getContext("2d");
+      window.onload = function() {
+        simulationCanvas = document.getElementById("simulationCanvas");
+        simCtx = simulationCanvas.getContext("2d");
 
-  simulationCanvas.addEventListener("click", function(e) {
-    if (!document.fullscreenElement) {
-      simulationCanvas.requestFullscreen().catch(err => {
-        console.error("Error enabling full screen:", err);
-      });
-    } else {
-      document.exitFullscreen();
-    }
-  });
-
-  initializeSimulation();
-  updateLayout();
-  window.addEventListener("resize", updateLayout);
-
-  // Add the fullscreen change listener here:
-document.addEventListener("fullscreenchange", () => {
-  // Do not change resolution_scale here—let updateRenderDimensions() decide
-  initializeSimulation();
-  updateLayout();
-});
-
-
-  requestAnimationFrame(mainLoop);
-};
-
-
-      function drawImage(imageArray) {
-        const imgData = simCtx.createImageData(ANIMATION_RENDER_WIDTH, ANIMATION_RENDER_HEIGHT);
-        for (let i = 0; i < ANIMATION_RENDER_HEIGHT; i++) {
-          for (let j = 0; j < ANIMATION_RENDER_WIDTH; j++) {
-            const index = (i * ANIMATION_RENDER_WIDTH + j) * 4;
-            const pixel = imageArray[i][j];
-            imgData.data[index] = pixel[0] * 255;
-            imgData.data[index + 1] = pixel[1] * 255;
-            imgData.data[index + 2] = pixel[2] * 255;
-            imgData.data[index + 3] = 255;
+        simulationCanvas.addEventListener("click", function(e) {
+          if (!document.fullscreenElement) {
+            simulationCanvas.requestFullscreen().catch(err => {
+              console.error("Error enabling full screen:", err);
+            });
+          } else {
+            document.exitFullscreen();
           }
-        }
-        let offCanvas = document.createElement("canvas");
-        offCanvas.width = ANIMATION_RENDER_WIDTH;
-        offCanvas.height = ANIMATION_RENDER_HEIGHT;
-        let offCtx = offCanvas.getContext("2d");
-        offCtx.putImageData(imgData, 0, 0);
-        simCtx.clearRect(0, 0, simulationCanvas.width, simulationCanvas.height);
-        simCtx.drawImage(offCanvas, 0, 0, ANIMATION_DISPLAY_WIDTH, ANIMATION_DISPLAY_HEIGHT);
-      }
+        });
 
-      function mainLoop(timestamp) {
-        if (!lastTime) lastTime = timestamp;
-        let dt = (timestamp - lastTime) / 1000;
-        lastTime = timestamp;
-        frame++;
-        let t = frame / FPS;
+        initializeSimulation();
+        updateLayout();
+        window.addEventListener("resize", updateLayout);
 
-        const [dX, dY] = generateDisplacementFields(t);
-        let dispImage = applyDisplacement(initialImage, dX, dY, t);
-        if (controlParams.edge_detection) {
-          dispImage = edgeDetection(dispImage);
-        }
-        dispImage = applyRGBShift(dispImage, controlParams.rgb_shift_intensity);
-        dispImage = applyNoise(dispImage, controlParams.noise_intensity);
-        if (controlParams.invert_colors) {
-          const height = ANIMATION_RENDER_HEIGHT, width = ANIMATION_RENDER_WIDTH;
-          for (let i = 0; i < height; i++) {
-            for (let j = 0; j < width; j++) {
-              dispImage[i][j] = dispImage[i][j].map(v => 1 - v);
-            }
-          }
-        }
-        dispImage = applySharpening(dispImage, controlParams.sharpening_intensity);
-        dispImage = applyRGBWCurves(dispImage);
-        drawImage(dispImage);
+        document.addEventListener("fullscreenchange", () => {
+          initializeSimulation();
+          updateLayout();
+        });
+
         requestAnimationFrame(mainLoop);
-      }
+      };
     </script>
   </body>
 </html>
