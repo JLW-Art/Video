@@ -318,17 +318,53 @@
         return newImage;
       }
 
-      // Compute internal render dimensions based on resolution_scale
-      function updateRenderDimensions() {
-        const scale = controlParams.resolution_scale;
-        if (ASPECT_RATIO_LANDSCAPE) {
-          ANIMATION_RENDER_WIDTH = Math.floor(BASE_ANIMATION_RENDER_WIDTH_LANDSCAPE * scale);
-          ANIMATION_RENDER_HEIGHT = Math.floor(BASE_ANIMATION_RENDER_HEIGHT_LANDSCAPE * scale);
-        } else {
-          ANIMATION_RENDER_WIDTH = Math.floor(BASE_ANIMATION_RENDER_WIDTH_PORTRAIT * scale);
-          ANIMATION_RENDER_HEIGHT = Math.floor(BASE_ANIMATION_RENDER_HEIGHT_PORTRAIT * scale);
-        }
+function updateRenderDimensions() {
+  // Choose base dimensions depending on orientation
+  let baseWidth, baseHeight;
+  if (ASPECT_RATIO_LANDSCAPE) {
+    baseWidth = BASE_ANIMATION_RENDER_WIDTH_LANDSCAPE;  // e.g., 320
+    baseHeight = BASE_ANIMATION_RENDER_HEIGHT_LANDSCAPE; // e.g., 180
+  } else {
+    baseWidth = BASE_ANIMATION_RENDER_WIDTH_PORTRAIT;   // e.g., 180
+    baseHeight = BASE_ANIMATION_RENDER_HEIGHT_PORTRAIT;   // e.g., 320
+  }
+
+  // Use your default resolution scale (set in controlParams)
+  let currentScale = controlParams.resolution_scale; // usually 1.0
+
+  // Only adjust if in full-screen and the display is extremely small
+  if (document.fullscreenElement) {
+    if (ASPECT_RATIO_LANDSCAPE) {
+      // In landscape, if the full-screen canvas height is below a threshold,
+      // then bump up the scale.
+      if (ANIMATION_DISPLAY_HEIGHT < 180) {  // adjust threshold as needed
+        currentScale = 1.5;
       }
+    } else {
+      // In portrait, check the canvas width
+      if (ANIMATION_DISPLAY_WIDTH < 180) {  // adjust threshold as needed
+        currentScale = 1.5;
+      }
+    }
+  }
+
+  // Compute the render dimensions based on the (possibly adjusted) scale
+  let renderWidth = Math.floor(baseWidth * currentScale);
+  let renderHeight = Math.floor(baseHeight * currentScale);
+
+  // (Optional) Cap the render dimensions to avoid performance issues.
+  const maxWidth = 640, maxHeight = 360;
+  if (renderWidth > maxWidth || renderHeight > maxHeight) {
+    currentScale = Math.min(maxWidth / baseWidth, maxHeight / baseHeight);
+    renderWidth = Math.floor(baseWidth * currentScale);
+    renderHeight = Math.floor(baseHeight * currentScale);
+  }
+
+  // Update the global variables used by your simulation
+  ANIMATION_RENDER_WIDTH = renderWidth;
+  ANIMATION_RENDER_HEIGHT = renderHeight;
+}
+
 
 function updateCanvasSize() {
   const isMobile = window.innerWidth < 600;
@@ -721,8 +757,11 @@ function updateCanvasSize() {
           numberInput.step = info.step;
           numberInput.style.fontSize = "14px";
           numberInput.style.width = "50px";
-          span.replaceWith(numberInput);
-          numberInput.focus();
+span.replaceWith(numberInput);
+setTimeout(() => {
+  numberInput.focus();
+}, 100);
+
           numberInput.addEventListener("keydown", function(e) {
             if (e.key === "Enter") {
               numberInput.blur();
@@ -1050,17 +1089,12 @@ window.onload = function() {
   window.addEventListener("resize", updateLayout);
 
   // Add the fullscreen change listener here:
-  document.addEventListener("fullscreenchange", () => {
-    if (document.fullscreenElement) {
-      // Increase resolution scale for a higher render resolution when in full screen
-      controlParams.resolution_scale = 2.0; // try 2.0 or higher as needed
-    } else {
-      // Reset back when exiting full screen
-      controlParams.resolution_scale = 1.0;
-    }
-    initializeSimulation();
-    updateLayout();
-  });
+document.addEventListener("fullscreenchange", () => {
+  // Do not change resolution_scale here—let updateRenderDimensions() decide
+  initializeSimulation();
+  updateLayout();
+});
+
 
   requestAnimationFrame(mainLoop);
 };
