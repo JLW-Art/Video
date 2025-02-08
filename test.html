@@ -331,15 +331,23 @@
       }
 
 function updateCanvasSize() {
-  // Get the container that holds the canvas.
-  const canvasContainer = document.getElementById("canvasContainer");
-  // Use its clientWidth and clientHeight (which work well on mobile)
-  const availableWidth = canvasContainer.clientWidth;
-  const availableHeight = canvasContainer.clientHeight;
+  const isMobile = window.innerWidth < 600;
+  let availableWidth, availableHeight;
+
+  if (isMobile) {
+    // On mobile, use nearly the full screen
+    availableWidth = window.innerWidth - 20; // small padding
+    availableHeight = window.innerHeight * 0.7; // use 70% of the height for the canvas
+  } else {
+    // On desktop, reserve space for the control panel
+    const horizontalPadding = 20, verticalPadding = 20;
+    availableWidth = window.innerWidth - CONTROL_PANEL_WIDTH - horizontalPadding;
+    availableHeight = window.innerHeight - verticalPadding;
+  }
+
+  // Calculate canvas size while keeping the proper aspect ratio
   const ratio = ASPECT_RATIO_LANDSCAPE ? 16 / 9 : 9 / 16;
   let canvasWidth, canvasHeight;
-
-  // Calculate canvas size so that the aspect ratio is maintained.
   if (availableWidth / ratio <= availableHeight) {
     canvasWidth = availableWidth;
     canvasHeight = availableWidth / ratio;
@@ -353,6 +361,7 @@ function updateCanvasSize() {
   ANIMATION_DISPLAY_WIDTH = canvasWidth;
   ANIMATION_DISPLAY_HEIGHT = canvasHeight;
 }
+
 
 
       function initializeDisplacementBase() {
@@ -1022,24 +1031,40 @@ flipAspectBtn.onclick = function() {
         setupUI();
       }
 
-      window.onload = function() {
-        simulationCanvas = document.getElementById("simulationCanvas");
-        simCtx = simulationCanvas.getContext("2d");
-        // Full-screen toggle on clicking the animation canvas
-        simulationCanvas.addEventListener("click", function(e) {
-          if (!document.fullscreenElement) {
-            simulationCanvas.requestFullscreen().catch(err => {
-              console.error("Error enabling full screen:", err);
-            });
-          } else {
-            document.exitFullscreen();
-          }
-        });
-        initializeSimulation();
-        updateLayout();
-        window.addEventListener("resize", updateLayout);
-        requestAnimationFrame(mainLoop);
-      };
+window.onload = function() {
+  simulationCanvas = document.getElementById("simulationCanvas");
+  simCtx = simulationCanvas.getContext("2d");
+
+  simulationCanvas.addEventListener("click", function(e) {
+    if (!document.fullscreenElement) {
+      simulationCanvas.requestFullscreen().catch(err => {
+        console.error("Error enabling full screen:", err);
+      });
+    } else {
+      document.exitFullscreen();
+    }
+  });
+
+  initializeSimulation();
+  updateLayout();
+  window.addEventListener("resize", updateLayout);
+
+  // Add the fullscreen change listener here:
+  document.addEventListener("fullscreenchange", () => {
+    if (document.fullscreenElement) {
+      // Increase resolution scale for a higher render resolution when in full screen
+      controlParams.resolution_scale = 2.0; // try 2.0 or higher as needed
+    } else {
+      // Reset back when exiting full screen
+      controlParams.resolution_scale = 1.0;
+    }
+    initializeSimulation();
+    updateLayout();
+  });
+
+  requestAnimationFrame(mainLoop);
+};
+
 
       function drawImage(imageArray) {
         const imgData = simCtx.createImageData(ANIMATION_RENDER_WIDTH, ANIMATION_RENDER_HEIGHT);
