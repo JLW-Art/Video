@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <!-- Ensure proper scaling on mobile devices -->
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Video Synth V1.02</title>
+    <title>Video Synth V1.03</title>
     <style>
       /* Global Styles */
       html, body {
@@ -181,14 +181,14 @@
       .curve-editor-container {
         position: relative;
       }
-      .curve-editor {
-        width: 180px;
-        height: 120px;
-        border: 1px solid #646464;
-        background-color: #444;
-        border-radius: 5px;
-        cursor: crosshair;
-      }
+.curve-editor {
+  width: 160px;
+  height: 100px;
+  border: 1px solid #646464;
+  background-color: #444;
+  border-radius: 5px;
+  cursor: crosshair;
+}
       .curve-editor-reset {
         position: absolute;
         top: 5px;
@@ -230,7 +230,7 @@
       <!-- Right side: UI Panel -->
       <div id="controls">
         <h2>
-          Video Synth <span style="font-size: 0.7em; color: #888;">v1.02</span>
+          Video Synth <span style="font-size: 0.7em; color: #888;">v1.03</span>
           <span class="by-jlw"><a href="https://jlw.kleio.com" target="_blank">by JLW</a></span>
         </h2>
         <div id="toggles"></div>
@@ -900,7 +900,7 @@
           label.style.fontSize = "14px";
           label.style.marginBottom = "5px";
           container.appendChild(label);
-          const editor = new CurveEditor(chObj.key, 180, 120);
+          const editor = new CurveEditor(chObj.key, 160, 100);
           container.appendChild(editor.canvas);
           container.appendChild(editor.resetButton);
           curveEditorsDiv.appendChild(container);
