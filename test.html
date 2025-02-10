@@ -182,18 +182,21 @@
         position: relative;
       }
 .curve-editor {
-  width: 160px;
-  height: 100px;
+  width: 100%;       /* Fill the container’s width */
+  height: 120px;     /* Fixed height */
   border: 1px solid #646464;
   background-color: #444;
   border-radius: 5px;
   cursor: crosshair;
+  display: block;
 }
+.curve-editor-header {
+  text-align: right;
+  margin-bottom: 5px;  /* Adds a little space between the header and the canvas */
+}
+
       .curve-editor-reset {
-        position: absolute;
-        top: 5px;
-        right: 5px;
-        z-index: 10;
+
         background-color: #007acc;
         color: #f0f0f0;
         border: none;
@@ -891,21 +894,46 @@
           { key: "b", label: "Blue Curve" },
           { key: "w", label: "White Curve" }
         ];
-        channels.forEach(chObj => {
-          const container = document.createElement("div");
-          container.className = "curve-editor-container";
-          container.style.position = "relative";
-          const label = document.createElement("div");
-          label.innerText = chObj.label + ":";
-          label.style.fontSize = "14px";
-          label.style.marginBottom = "5px";
-          container.appendChild(label);
-          const editor = new CurveEditor(chObj.key, 160, 100);
-          container.appendChild(editor.canvas);
-          container.appendChild(editor.resetButton);
-          curveEditorsDiv.appendChild(container);
-          editor.draw();
-        });
+channels.forEach(chObj => {
+  // Create the container and append it immediately.
+  const container = document.createElement("div");
+  container.className = "curve-editor-container";
+  container.style.position = "relative";
+  curveEditorsDiv.appendChild(container);
+
+  // Measure the container width.
+  const containerWidth = container.clientWidth;
+
+  // Create the curve editor.
+  const editor = new CurveEditor(chObj.key, containerWidth, 120);
+
+  // Create a header div that holds both the title and the reset button.
+  const header = document.createElement("div");
+  header.className = "curve-editor-header";
+  // Use flex layout to align items.
+  header.style.display = "flex";
+  header.style.justifyContent = "space-between";
+  header.style.alignItems = "center";
+  header.style.marginBottom = "5px";
+
+  // Create the title element.
+  const title = document.createElement("span");
+  title.innerText = chObj.label;
+  title.style.fontSize = "14px";
+
+  // Add the title and reset button to the header.
+  header.appendChild(title);
+  header.appendChild(editor.resetButton);
+
+  // Append the header and the canvas to the container.
+  container.appendChild(header);
+  container.appendChild(editor.canvas);
+
+  // Draw the editor.
+  editor.draw();
+});
+
+
 
         // Buttons Section – natural names
         const buttonsDiv = document.getElementById("buttons");
@@ -992,9 +1020,10 @@
             this.ctx.arc(x, y, 4, 0, 2 * Math.PI);
             this.ctx.fill();
           }
-          this.ctx.fillStyle = UI_TEXT;
-          this.ctx.font = "14px sans-serif";
-          this.ctx.fillText(this.name.toUpperCase() + " Curve", 5, 20);
+// this.ctx.fillStyle = UI_TEXT;
+// this.ctx.font = "14px sans-serif";
+// this.ctx.fillText(this.name.toUpperCase() + " Curve", 5, 20);
+
         }
         getMousePos(e) {
           let rect = this.canvas.getBoundingClientRect();
